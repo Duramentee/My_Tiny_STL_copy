@@ -24,10 +24,10 @@ template <class Category, class T, class Distance = ptrdiff_t,
 struct iterator
 {
 	using iterator_category = Category;
-	using value_type = T;
-	using pointer = Pointer;
-	using reference = Reference;
-	using difference_type = Distance;
+	using value_type        = T;
+	using pointer           = Pointer;
+	using reference         = Reference;
+	using difference_type   = Distance;
 };
 
 
@@ -62,6 +62,62 @@ public:
 	static const bool value = sizeof(test<T>(nullptr)) == sizeof(char);
 };
 
+template <class Iterator, bool>
+struct iterator_traits_impl {};
+
+template <class Iterator>
+struct iterator_traits_impl<Iterator, true>
+{
+	using iterator_category = typename Iterator::iterator_category;
+	using value_type        = typename Iterator::value_type;
+	using pointer           = typename Iterator::pointer;
+	using reference         = typename Iterator::reference;
+	using difference_type   = typename Iterator::difference_type;
+};
+
+template <class Iterator, bool>
+struct iterator_traits_helper {};
+
+template <class Iterator>
+struct iterator_traits_helper<Iterator, true>
+	: public iterator_traits_impl<Iterator,
+	std::is_convertible<typename Iterator::iterator_category, input_iterator_tag>::value ||
+	std::is_convertible<typename Iterator::iterator_category, output_iterator_tag>::value>
+{
+};
+
+// 萃取迭代器的特性
+template <class Iterator>
+struct iterator_traits 
+	: public iterator_traits_helper<Iterator, has_iterator_cat<Iterator>::value> {};
+
+// 针对原生指针的偏特化版本
+template <class T>
+struct iterator_traits<T*>
+{
+	using iterator_category = random_access_iterator_tag;
+	using value_type        = T;
+	using pointer           = T*;
+	using reference         = T&;
+	using difference_type   = ptrdiff_t;
+};
+
+template <class T>
+struct iterator_traits<const T*>
+{
+  using iterator_category = random_access_iterator_tag;
+  using value_type        = T;
+  using pointer           = const T*;
+  using reference         = const T&;
+  using difference_type   = ptrdiff_t;
+};
+
+template <class T, class U, bool = has_iterator_cat<iterator_traits<T>>::value>
+struct has_iterator_cat_of
+	: public m_bool_constant<std::is_convertible<
+	typename iterator_traits<T>::iterator_category, U>::value>
+{
+};
 
 }
 

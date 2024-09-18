@@ -17,6 +17,7 @@ struct m_integral_constant
   static constexpr T value = v;
 };
 
+//为bool值做特化
 template <bool b>
 using m_bool_constant = m_integral_constant<bool, b>;
 
