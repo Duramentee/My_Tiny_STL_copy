@@ -201,8 +201,193 @@ distance(InputIterator first, InputIterator last)
 
 //advance 的 input_iterator_tag 版本
 template <class InputIterator, class Distance>
-void advance_dispatch
-
+void advance_dispatch(InputIterator& i, Distance n, input_iterator_tag)
+{
+	while (n--)
+		++i;
 }
+
+//advance 的 bidirectional_iterator_tag 版本
+template <class BidirectionalIterator, class Distance>
+void advance_dispatch(BidirectionalIterator& i, Distance n, bidirectional_iterator_tag)
+{
+	if (n >= 0)
+		while (n--)
+			++i;
+	else
+		while (n++)
+			--i;
+}
+
+//advace 的 random_access_iterator_tag 版本
+template <class RandomIter, class Distance>
+void advance_dispatch(RandomIter& i, Distance n, random_access_iterator_tag)
+{
+	i += n;
+}
+
+template <class InputIterator, class Distance>
+void advance(InputIterator& i, Distance n)
+{
+	advance_dispatch(i, n, iterator_category(i));
+}
+
+// ********************************************************************************************* //
+
+// 模板类 : reverse_iterator
+// 代表反向迭代器，使前进为后退，后退为前进
+template <class Iterator>
+class reverse_iterator
+{
+private:
+	Iterator current;  // 记录该反向迭代器对应的正向迭代器
+
+public:
+	// 反向迭代器的五种相应型别
+	using iterator_category = typename iterator_traits<Iterator>::iterator_category;
+	using value_type = typename iterator_traits<Iterator>::value_type;
+	using difference_type = typename iterator_traits<Iterator>::difference_type;
+	using pointer = typename iterator_traits<Iterator>::pointer;
+	using reference = typename iterator_traits<Iterator>::reference;
+
+	using iterator_type = Iterator;
+	using self = reverse_iterator<Iterator>;
+
+public:
+	//三类构造函数
+	reverse_iterator() = default;  // 默认构造
+	explicit reverse_iterator(iterator_type i) : current(i) {}  // 单参构造,参数为指定的迭代器型别
+	reverse_iterator(const self &rhs) : current(rhs.current) {}  // 拷贝构造
+
+public:
+	//获取对应的正向迭代器
+	Iterator_type base() const
+	{
+		return current;
+	}
+
+	//重载运算符
+	reference operator*() const
+	{
+		auto tmp = current;
+		return *--tmp;
+	}
+	pointer operator->() const
+	{
+		return &(operator*());
+	}
+
+	// 前进(++)变为后退(--)
+	self& operator++()
+	{
+		--current;
+		return *this;
+	}
+	self operator(int)
+	{
+		self tmp = *this;
+		--current;
+		return tmp;
+	}
+
+	// 后退(--)变为前进(++)
+	self& operator--()
+	{
+		++current;
+		return *this;
+	}
+	self operator--(int)
+	{
+		self tmp = *this;
+		++current;
+		return tmp;
+	}
+
+	self& operator+=(difference_type n)
+	{
+		current -= n;
+		return *this;
+	}
+	self operator+(difference_type n) const
+	{
+		return self(current - n);
+	}
+	self& operator-=(difference_type n) const
+	{
+		current += n;
+		return *this;
+	}
+	self operator-(difference_type n) const
+	{
+		return self(current + n);
+	}
+
+	reference operator[](difference_type n) const
+	{
+		return *(*this + n);
+	}
+};
+
+//重载 operator-
+template <class Iterator>
+typename reverse_iterator<Iterator>::difference_type
+operator-(const reverse_iterator<Iterator>& lhs,
+		  const reverse_iterator<Iterator>& rhs)
+{
+	return rhs.base() - lhs.base();
+}
+
+//重载 operator==
+template <class Iterator>
+typename reverse_iterator<Iterator>::difference_type
+operator==(const reverse_iterator<Iterator>& lhs,
+		  const reverse_iterator<Iterator>& rhs)
+{
+	return lhs.base() == rhs.base();
+}
+
+//重载 operator<
+template <class Iterator>
+typename reverse_iterator<Iterator>::difference_type
+operator<(const reverse_iterator<Iterator>& lhs,
+		  const reverse_iterator<Iterator>& rhs)
+{
+	return rhs.base() < lhs.base();
+}
+
+//重载 operator!=
+template <class Iterator>
+typename reverse_iterator<Iterator>::difference_type
+operator-(const reverse_iterator<Iterator>& lhs,
+		  const reverse_iterator<Iterator>& rhs)
+{
+	return !(lsh == rhs);
+}
+
+//重载 operator>
+template <class Iterator>
+bool operator>(const reverse_iterator<Iterator>& lhs,
+               const reverse_iterator<Iterator>& rhs)
+{
+  return rhs < lhs;
+}
+
+//重载 operator<=
+template <class Iterator>
+bool operator<=(const reverse_iterator<Iterator>& lhs,
+                const reverse_iterator<Iterator>& rhs)
+{
+  return !(rhs < lhs);
+}
+
+//重载 operator>=
+template <class Iterator>
+bool operator>=(const reverse_iterator<Iterator>& lhs,
+                const reverse_iterator<Iterator>& rhs)
+{
+  return !(lhs < rhs);
+}
+
+}  // namespace mystl
 
 #endif // !MYTINYSTL_ITERATOR_H_
