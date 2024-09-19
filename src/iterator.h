@@ -12,11 +12,11 @@ namespace mystl
 {
 
 //五种迭代器类型标记
-struct input_iterator_tag {};  // 输入迭代器
-struct output_iterator_tag {};  // 输出迭代器
-struct forward_iterator_tag : public input_iterator_tag {};  // 前向迭代器
-struct bidirectional_iterator_tag : public forward_iterator_tag {};  // 双向迭代器
-struct random_access_iterator_tag : public bidirectional_iterator_tag {};  // 随机访问迭代器
+struct input_iterator_tag {};  // 输入迭代器标签
+struct output_iterator_tag {};  // 输出迭代器标签
+struct forward_iterator_tag : public input_iterator_tag {};  // 前向迭代器标签
+struct bidirectional_iterator_tag : public forward_iterator_tag {};  // 双向迭代器标签
+struct random_access_iterator_tag : public bidirectional_iterator_tag {};  // 随机访问迭代器标签
 
 //iterator模板,定义迭代器的一般属性
 template <class Category, class T, class Distance = ptrdiff_t,
@@ -116,6 +116,32 @@ template <class T, class U, bool = has_iterator_cat<iterator_traits<T>>::value>
 struct has_iterator_cat_of
 	: public m_bool_constant<std::is_convertible<
 	typename iterator_traits<T>::iterator_category, U>::value>
+{
+};
+
+//萃取某种迭代器
+template <class T, class U>
+struct has_iterator_cat_of<T, U, false> : public m_false_type {};
+
+template <class Iter>
+struct is_input_iterator : public has_iterator_cat_of<Iter, input_iterator_tag> {};
+
+template <class Iter>
+struct is_output_iterator : public has_iterator_cat_of<Iter, output_iterator_tag> {};
+
+template <class Iter>
+struct is_forward_iterator : public has_iterator_cat_of<Iter, forward_iterator_tag> {};
+
+template <class Iter>
+struct is_bidirectional_iterator : public has_iterator_cat_of<Iter, bidirectional_iterator_tag> {};
+
+template <class Iter>
+struct is_random_access_iterator : public has_iterator_cat_of<Iter, random_access_iterator_tag> {};
+
+template <class Iterator>
+struct is_iterator
+	: public m_bool_constant<is_input_iterator<Iterator>::value
+						  || is_output_iterator<Iterator>::value>
 {
 };
 
