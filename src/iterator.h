@@ -145,6 +145,60 @@ struct is_iterator
 {
 };
 
+//萃取某个迭代器的category
+template <class Iterator>
+typename iterator_traits<Iterator>::iterator_category
+iterator_category(const Iterator&)
+{
+	using Category = typename iterator_traits<Iterator>::iterator_category;
+	//调用category构造
+	return Category();
+}
+
+//萃取某个迭代器的distance_type
+template <class Iterator>
+typename iterator_traits<Iterator>::difference_type*
+distance_type(const Iterator&)
+{
+	return static_cast<typename iterator_traits<Iterator>::difference_type*>(nullptr);
+}
+
+//以下函数用以计算迭代器之间距离
+
+//distance 的 input_iterator_tag 版本
+template <class InputIterator>
+typename iterator_traits<InputIterator>::difference_type
+distance_dispatch(InputIterator first, InputIterator last, input_iterator_tag)
+{
+	typename iterator_traits<InputIterator>::difference_type n = 0;
+	while(first != last)
+	{
+		++first;
+		++n;
+	}
+
+	return n;
+}
+
+//distance 的 random_access_iterator_tag版本
+template <class RandomIter>
+typename iterator_traits<RandomIter>::difference_type
+distance_dispatch(RandomIter first, RandomIter last, random_access_iterator_tag)
+{
+	return last - first;
+}
+
+template <class InputIterator>
+typename iterator_traits<InputIterator>::difference_type
+distance(InputIterator first, InputIterator last)
+{
+	return distance_dispatch(first, last, iterator_category(first));
+}
+
+//以下函数用于让迭代器前进 n 个距离
+
+//advance 的 input_iterator_tag 版本
+
 }
 
 #endif // !MYTINYSTL_ITERATOR_H_
