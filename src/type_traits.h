@@ -18,6 +18,8 @@ struct m_integral_constant
 };
 
 //为bool值做特化
+//第一个参数为bool
+//bool b 即为原模板的第二个模板参数
 template <bool b>
 using m_bool_constant = m_integral_constant<bool, b>;
 
