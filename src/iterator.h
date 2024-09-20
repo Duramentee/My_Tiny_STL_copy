@@ -112,6 +112,7 @@ struct iterator_traits<const T*>
   using difference_type   = ptrdiff_t;
 };
 
+// 检测一个给定的迭代器类型(T)是否属于某种特定的迭代器类别(U)
 template <class T, class U, bool = has_iterator_cat<iterator_traits<T>>::value>
 struct has_iterator_cat_of
 	: public m_bool_constant<std::is_convertible<
