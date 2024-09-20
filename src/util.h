@@ -38,8 +38,10 @@ T&& forward(typename std::remove_reference<T>::type&& arg) noexcept
 	return static_cast<T&&>(arg);
 }
 
-//swap
-
+// swap
+// 用移动语义提高效率
+// Tp 一般是 template parameter的缩写
+// lhs, rhs 分别是left hand side和right hand side的缩写
 template <class Tp>
 void swap(Tp& lhs, Tp& rhs)
 {
@@ -48,9 +50,13 @@ void swap(Tp& lhs, Tp& rhs)
 	rhs = mystl::move(tmp);
 }
 
+// 用于一段范围的 swap
+// first1, last1 表示第一个范围的开始和结束迭代器. first2 表示第二个范围开始的迭代器
 template <class ForwardIter1, class ForwardIter2>
 ForwardIter2 swap_range(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 first2)
 {
+	// 直到 first1 达到 last 之前,做遍历
+	// (void) ++first2,将 ++first2 的结果强制转换为 void,主要目的在于确保 ++first2 的表达式不会产生未使用的结果的警告。
 	for (; first1 != last1; ++first, (void) ++first2)
 	{
 		mystl::swap(*first1, *first2);
@@ -58,6 +64,8 @@ ForwardIter2 swap_range(ForwardIter1 first1, ForwardIter1 last1, ForwardIter2 fi
 	return first2;
 }
 
+// 专门用于数组类型的 swap
+// Tp(&a)[N] 和 Tp(&b)[N] 表示两个同类型、同大小的数组,(注意加小括号,否则代表一个长度为N的数组a,内部为Tp类型的引用)
 template <class Tp, size_t N>
 void swap(Tp(&a)[N], Tp(&b)[N])
 {
@@ -65,9 +73,5 @@ void swap(Tp(&a)[N], Tp(&b)[N])
 }
 
 } // namespace mystl
-
-
-
-
 
 #endif // !MYTINYSTL_UTIL_H_
