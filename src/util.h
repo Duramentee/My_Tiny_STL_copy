@@ -4,6 +4,7 @@
 // 这个文件包含一些通用工具，包括 move, forward, swap 等函数，以及 pair 等.
 
 #include <cstddef>
+#include <stdlib.h>
 
 #include "type_traits.h"
 
@@ -119,7 +120,7 @@ struct pair
 		          std::is_copy_constructible<U1>::value &&
 		          std::is_copy_constructible<U2>::value &&
 		          (!std::is_convertible<const U1&, Ty1>::value ||
-			          !std::is_convertible<const U2&, Ty2>::value), int>::type = 0>
+		           !std::is_convertible<const U2&, Ty2>::value), int>::type = 0>
 	explicit constexpr pair(const Ty1& a, const Ty2& b) : first(a), second(b)
 	{
 	}
@@ -129,6 +130,8 @@ struct pair
 	pair(pair&& rhs) = default;
 
 	// implicit constructiable for other type
+	// 满足四个条件时可被调用
+	// Ty1可由Other1构造,Ty2可由Other2构造,Other1的右值引用可转为Ty1,Other2的右值引用可转为Ty2
 	template <class Other1, class Other2,
 	          typename std::enable_if<
 		          std::is_constructible<Ty1, Other1>::value &&
@@ -140,7 +143,183 @@ struct pair
 		  second(mystl::forward<Other2>(b))
 	{
 	}
+
+	// explicit constructiable for other type
+	template <class Other1, class Other2,
+	          typename std::enable_if<
+		          std::is_constructible<Ty1, Other1>::value &&
+		          std::is_constructible<Ty2, Other2>::value &&
+		          (!std::is_convertible<Other1, Ty1>::value ||
+		           !std::is_convertible<Other2, Ty2>::value), int>::type = 0>
+	explicit constexpr pair(Other1&& a, Other2&& b)
+		: first(mystl::forward<Other1>(a)),
+		  second(mystl::forward<Other2>(b))
+	{
+	}
+
+	// implicit constructiable for other pair
+	template <class Other1, class Other2,
+	          typename std::enable_if<
+		          std::is_constructible<Ty1, const Other1&>::value &&
+		          std::is_constructible<Ty2, const Other2&>::value &&
+		          std::is_convertible<const Other1&, Ty1>::value &&
+		          std::is_convertible<const Other2&, Ty2>::value, int>::type = 0>
+	constexpr pair(const pair<Other1, Other2>& other)
+		: first(other.first),
+		  second(other.second)
+	{
+	}
+
+	// explicit constructiable for other pair
+	template <class Other1, class Other2,
+	          typename std::enable_if<
+		          std::is_constructible<Ty1, const Other1&>::value &&
+		          std::is_constructible<Ty2, const Other2&>::value &&
+		          (!std::is_convertible<const Other1&, Ty1>::value ||
+		           !std::is_convertible<const Other2&, Ty2>::value), int>::type = 0>
+	explicit constexpr pair(const pair<Other1, Other2>& other)
+		: first(other.first),
+		  second(other.second)
+	{
+	}
+
+	// implicit constructiable for other pair
+	template <class Other1, class Other2,
+	          typename std::enable_if<
+		          std::is_constructible<Ty1, Other1>::value &&
+		          std::is_constructible<Ty2, Other2>::value &&
+		          std::is_convertible<Other1, Ty1>::value &&
+		          std::is_convertible<Other2, Ty2>::value, int>::type = 0>
+	constexpr pair(pair<Other1, Other2>&& other)
+		: first(mystl::forward<Other1>(other.first)),
+		  second(mystl::forward<Other2>(other.second))
+	{
+	}
+
+	// explicit constructiable for other pair
+	template <class Other1, class Other2,
+	          typename std::enable_if<
+		          std::is_constructible<Ty1, Other1>::value &&
+		          std::is_constructible<Ty2, Other2>::value &&
+		          (!std::is_convertible<Other1, Ty1>::value ||
+		           !std::is_convertible<Other2, Ty2>::value), int>::type = 0>
+	explicit constexpr pair(pair<Other1, Other2>&& other)
+		: first(mystl::forward<Other1>(other.first)),
+		  second(mystl::forward<Other2>(other.second))
+	{
+	}
+
+	// copy assign for this pair
+	// 要求两个pair中的元素类型相同
+	pair& operator=(const pair& rhs)
+	{
+		if (this != &rhs)
+		{
+			first = rhs.first;
+			second = rhs.second;
+		}
+		return *this;
+	}
+
+	// move assign for this pair
+	// 要求两个pair中的元素类型相同
+	pair& operator(pair&& rhs)
+	{
+		if (this != rhs)
+		{
+			first = mystl::move(rhs.first);
+			second = mystl::move(rhs.second);
+		}
+		return *this;
+	}
+
+	// copy assign for other pair
+	// 不要求两个pair中的元素类型相同
+	template <class Other1, class Other2>
+	pair& operator=(const pair<Other1, Other2>& other)
+	{
+		first = other.first;
+		second = other.second;
+		return *this;
+	}
+
+	// move assign for other pair
+	// 不要求两个pair中的元素类型相同
+	// 由于forward,当other.first或者other.second为左值时,调用拷贝而不是移动,为右值时才调用移动
+	template <class Other1, class Other2>
+	pair& operator=(pair<Other1, Other2>&& other)
+	{
+		first = mystl::forward<Other1>(other.first);
+		second = mystl::forward<Other2>(other.second);
+		return *this;
+	}
+
+	// 默认析构
+	~pair() = default;
+
+	void swap(pair& other)
+	{
+		if (this != &other)
+		{
+			mystl::swap(first, other.first);
+			mystl::swap(second, other.second);
+		}
+	}
 };
+
+// 重载比较运算符
+template <class Ty1, class Ty2>
+bool operator==(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+{
+	return lhs.first == rhs.first && lhs.second == rhs.second;
+}
+
+template <class Ty1, class Ty2>
+bool operator<(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+{
+	return lhs.first < rhs.first || (lhs.first == rhs.first && lhs.second < rhs.second);
+}
+
+template <class Ty1, class Ty2>
+bool operator!=(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+{
+	return !(lhs == rhs);
+}
+
+template <class Ty1, class Ty2>
+bool operator>(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+{
+	return lhs > rhs;
+}
+
+template <class Ty1, class Ty2>
+bool operator<=(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+{
+	return !(lhs > rhs);
+}
+
+template <class Ty1, class Ty2>
+bool operator>=(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+{
+	return !(lhs < rhs);
+}
+
 } // namespace mystl
 
 #endif // !MYTINYSTL_UTIL_H_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
