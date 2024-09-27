@@ -5,6 +5,10 @@
 // construct : 负责对象的构造
 // destroy   : 负责对象的析构
 
+// 主要围绕构造的对象能否进行平凡构造以及平凡析构编写
+// _one后缀的函数用于单个构造和析构
+// _cat后缀的函数作为辅助函数,被对应函数调用(例如 destroy 被 destroy_one 调用), 依据其构造或析构是否是平凡的而决定具体的函数调用策略
+
 #include <new>
 
 #include "type_traits.h"
